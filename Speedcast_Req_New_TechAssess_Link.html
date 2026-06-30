@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speedcast IT PMO — Requesting New Assessment Link</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:Arial,sans-serif; background:#1B4F5D; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:24px; }
+.card { background:white; border-radius:12px; padding:40px 48px; max-width:480px; width:100%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+.logo { font-family:Cambria,serif; font-size:22px; font-weight:bold; color:#1B4F5D; margin-bottom:6px; }
+.logo span { color:#00A6B4; }
+.sub { font-size:12px; color:#5A7A8A; margin-bottom:32px; letter-spacing:1px; text-transform:uppercase; }
+.icon { font-size:48px; margin-bottom:16px; }
+.title { font-family:Cambria,serif; font-size:20px; font-weight:bold; color:#1B4F5D; margin-bottom:8px; }
+.msg { font-size:13px; color:#5A7A8A; line-height:1.7; margin-bottom:24px; }
+.status { font-size:13px; font-weight:bold; padding:10px 20px; border-radius:6px; display:inline-block; }
+.status.loading { background:#EFF8FA; color:#00A6B4; }
+.status.success { background:#EDF7F2; color:#27A96C; }
+.status.error { background:#FEF0F0; color:#C94040; }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(0,166,180,0.3); border-top-color:#00A6B4; border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.footer { margin-top:28px; font-size:11px; color:#B0C8D0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo"><span>Speed</span>cast</div>
+  <div class="sub">IT Program Management Office</div>
+
+  <div id="loading">
+    <div class="icon">🔗</div>
+    <div class="title">Requesting your new assessment link...</div>
+    <div class="msg">Please wait — this takes just a moment.</div>
+    <div class="status loading"><span class="spinner"></span>Processing...</div>
+  </div>
+
+  <div id="success" style="display:none;">
+    <div class="icon">✅</div>
+    <div class="title">New link on its way</div>
+    <div class="msg">Your new Tech Assessment link has been requested. Check your email — it should arrive within a few minutes.<br><br>You can close this page.</div>
+    <div class="status success">✓ Request sent successfully</div>
+  </div>
+
+  <div id="error" style="display:none;">
+    <div class="icon">⚠️</div>
+    <div class="title">Something went wrong</div>
+    <div class="msg" id="errorMsg">Could not process your request. Please contact the IT Program Manager directly.</div>
+    <div class="status error">Request failed</div>
+  </div>
+
+  <div class="footer">IT PMO · Speedcast · Confidential</div>
+</div>
+
+<script>
+const FLOW_URL = 'https://defaultf29e86ba7b3f43b79f3a8cef7660e1.84.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/91fe35b783fe41afa16c4a499f7fa83d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=_RNZzhk7AeoaU8u3PsnEB5olitd-m6W8gtAO0Xq3FFI';
+
+async function requestNewLink() {
+  // Get rowId from URL parameters
+  const params = new URLSearchParams(window.location.search);
+  const rowId = params.get('rowId');
+
+  if (!rowId) {
+    showError('No request ID found in this link. Please contact the IT Program Manager directly.');
+    return;
+  }
+
+  try {
+    const res = await fetch(FLOW_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rowId: rowId })
+    });
+
+    if (res.ok || res.status === 202) {
+      showSuccess();
+    } else {
+      showError(`Request failed (HTTP ${res.status}). Please contact the IT Program Manager.`);
+    }
+  } catch(err) {
+    showError(`Could not reach the server: ${err.message}. Please contact the IT Program Manager.`);
+  }
+}
+
+function showSuccess() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('success').style.display = 'block';
+}
+
+function showError(msg) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('error').style.display = 'block';
+}
+
+// Run immediately on page load
+window.onload = requestNewLink;
+</script>
+</body>
+</html>
