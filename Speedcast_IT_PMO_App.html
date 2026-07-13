@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speedcast IT PMO App</title>
+<style>
+:root {
+  --dark:#1B4F5D; --teal:#00A6B4; --mint:#40BBA6; --deep:#213B4A;
+  --light:#F0F6F8; --muted:#5A7A8A; --border:#D0E4E8; --bg:#F4F8FA;
+  --white:#FFFFFF; --green:#27A96C; --amber:#E8981C; --red:#C94040;
+  --teal-light:#E0F4F6; --green-light:#EDF7F2; --amber-light:#FFF8EF; --red-light:#FEF0F0;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--deep);min-height:100vh;}
+
+/* ── HEADER ── */
+.header{background:var(--dark);padding:0 28px;display:flex;align-items:stretch;justify-content:space-between;}
+.header-brand{display:flex;flex-direction:column;justify-content:center;padding:12px 0;}
+.header-brand .org{font-size:9px;font-weight:bold;letter-spacing:2.5px;color:var(--teal);text-transform:uppercase;margin-bottom:3px;}
+.header-brand .title{font-family:Cambria,serif;font-size:17px;font-weight:bold;color:white;}
+.header-right{display:flex;align-items:center;gap:14px;}
+.refresh-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;}
+.refresh-btn:hover{background:rgba(255,255,255,0.2);}
+.updated{font-size:11px;color:rgba(255,255,255,0.4);}
+
+/* ── NAV TABS ── */
+.nav{background:var(--dark);border-top:1px solid rgba(255,255,255,0.08);padding:0 28px;display:flex;gap:2px;}
+.nav-tab{padding:10px 20px;font-size:12px;font-weight:bold;color:rgba(255,255,255,0.5);cursor:pointer;border-bottom:3px solid transparent;display:flex;align-items:center;gap:7px;}
+.nav-tab:hover{color:rgba(255,255,255,0.85);}
+.nav-tab.active{color:white;border-bottom-color:var(--teal);}
+.nav-badge{background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);font-size:9px;padding:1px 6px;border-radius:8px;}
+.nav-tab.active .nav-badge{background:var(--teal);color:white;}
+.nav-badge.alert{background:rgba(201,64,64,0.4);color:#FFB3B3;}
+
+/* ── PAGES ── */
+.page{display:none;max-width:1140px;margin:0 auto;padding:22px 24px;}
+.page.active{display:block;}
+
+/* ── SHARED ── */
+.sec-label{font-size:9px;font-weight:bold;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;margin-bottom:9px;}
+.section{margin-bottom:20px;}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.state-box{background:white;border:1px solid var(--border);border-radius:10px;padding:48px 24px;text-align:center;}
+.state-icon{font-size:36px;margin-bottom:12px;}
+.state-title{font-family:Cambria,serif;font-size:17px;color:var(--dark);font-weight:bold;margin-bottom:6px;}
+.state-sub{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.metric{background:white;border:1px solid var(--border);border-radius:8px;padding:13px 10px;text-align:center;}
+.metric .ml{font-size:10px;color:var(--muted);margin-bottom:6px;line-height:1.3;}
+.metric .mv{font-size:28px;font-weight:bold;line-height:1;}
+.metric .ms{font-size:10px;color:var(--muted);margin-top:4px;}
+.mv.teal{color:var(--teal);} .mv.green{color:var(--green);} .mv.amber{color:var(--amber);} .mv.red{color:var(--red);} .mv.mint{color:var(--mint);}
+
+/* ── PRIORITY STRIP ── */
+.pri-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.pri-card{background:white;border:1px solid var(--border);border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:12px;}
+.pri-badge{font-size:10px;font-weight:bold;padding:3px 9px;border-radius:5px;white-space:nowrap;}
+.p0b{background:rgba(201,64,64,0.12);color:var(--red);border:1px solid rgba(201,64,64,0.3);}
+.p1b{background:rgba(232,152,28,0.12);color:var(--amber);border:1px solid rgba(232,152,28,0.3);}
+.p2b{background:rgba(0,166,180,0.12);color:var(--teal);border:1px solid rgba(0,166,180,0.3);}
+.p3b{background:var(--light);color:var(--muted);border:1px solid var(--border);}
+.pi-count{font-size:24px;font-weight:bold;color:var(--deep);line-height:1;}
+.pi-label{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ── TABLE ── */
+.tbl-wrap{background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.tbl-head{padding:11px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
+.tbl-title{font-size:13px;font-weight:bold;color:var(--dark);}
+.tbl-count{font-size:10px;font-weight:bold;color:white;background:var(--teal);padding:2px 9px;border-radius:10px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:var(--light);}
+th{padding:8px 13px;text-align:left;font-size:9px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--deep);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr.row-red{background:rgba(201,64,64,0.04);}
+tr.row-amber{background:rgba(232,152,28,0.04);}
+.proj-name{font-weight:bold;font-size:12px;color:var(--dark);}
+.phase-tag{font-size:10px;color:var(--muted);background:var(--light);padding:2px 8px;border-radius:4px;border:1px solid var(--border);white-space:nowrap;display:inline-block;}
+.rag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:bold;}
+.rag-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.rag-g{color:var(--green);} .rag-g .rag-dot{background:var(--green);}
+.rag-a{color:var(--amber);} .rag-a .rag-dot{background:var(--amber);}
+.rag-r{color:var(--red);} .rag-r .rag-dot{background:var(--red);}
+
+/* ── REVIEW STATUS BADGES ── */
+.rv{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:bold;padding:3px 9px;border-radius:100px;white-space:nowrap;}
+.rv-ok{background:var(--green-light);color:var(--green);}
+.rv-pending{background:var(--amber-light);color:var(--amber);}
+.rv-na{background:rgba(90,122,138,0.1);color:var(--muted);}
+.review-warning{background:var(--red-light);border:1px solid rgba(201,64,64,0.3);color:var(--red);font-size:11.5px;font-weight:bold;padding:8px 12px;border-radius:6px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.dc{font-size:11px;color:var(--muted);}
+.pri{font-size:10px;font-weight:bold;padding:2px 7px;border-radius:4px;display:inline-block;}
+.p0{background:rgba(201,64,64,0.12);color:var(--red);}
+.p1{background:rgba(232,152,28,0.12);color:var(--amber);}
+.p2{background:rgba(0,166,180,0.12);color:var(--teal);}
+.p3{background:var(--light);color:var(--muted);border:1px solid var(--border);}
+.tier-pill{font-size:10px;font-weight:bold;padding:2px 8px;border-radius:10px;color:white;display:inline-block;}
+.t1p{background:var(--mint);} .t2p{background:var(--teal);} .t3p{background:var(--dark);}
+.cap-Yes{color:var(--green);font-weight:bold;}
+.cap-Likely{color:var(--teal);font-weight:bold;}
+.cap-Uncertain{color:var(--amber);font-weight:bold;}
+.cap-No{color:var(--red);font-weight:bold;}
+.notes-cell{font-size:10px;color:var(--muted);max-width:200px;line-height:1.4;}
+.deadline-badge{background:rgba(201,64,64,0.1);color:var(--red);border:1px solid rgba(201,64,64,0.25);font-size:10px;font-weight:bold;padding:1px 7px;border-radius:4px;display:inline-block;margin-top:3px;}
+
+/* ── AT RISK CARDS ── */
+.risk-grid{display:flex;flex-direction:column;gap:12px;}
+.risk-card{background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;}
+.risk-card.red{border-left:4px solid var(--red);}
+.risk-card.amber{border-left:4px solid var(--amber);}
+.risk-left{padding:14px 16px;flex:1;}
+.risk-name{font-family:Cambria,serif;font-size:14px;font-weight:bold;color:var(--dark);margin-bottom:5px;}
+.risk-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.risk-detail{font-size:12px;color:var(--muted);line-height:1.5;}
+.risk-right{padding:14px 16px;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:8px;min-width:140px;border-left:1px solid var(--border);}
+.risk-phase{font-size:11px;color:var(--muted);}
+.risk-date{font-size:12px;font-weight:bold;color:var(--deep);}
+.risk-owner{font-size:11px;color:var(--muted);}
+
+/* ── DECISION CARDS ── */
+.dec-card{background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+.dec-card.has-deadline{border-color:var(--amber);border-width:2px;}
+.dec-card.decided{opacity:0.6;}
+.dc-header{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px 12px;border-bottom:1px solid var(--border);background:#F9FCFD;}
+.dc-header-left{flex:1;}
+.dc-req-id{font-size:10px;font-weight:bold;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+.dc-name{font-family:Cambria,serif;font-size:15px;font-weight:bold;color:var(--dark);margin-bottom:5px;line-height:1.3;}
+.dc-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.dc-badge{font-size:10px;font-weight:bold;padding:2px 8px;border-radius:10px;}
+.status-pending{background:rgba(232,152,28,0.12);color:var(--amber);border:1px solid rgba(232,152,28,0.3);}
+.status-decided{background:rgba(39,169,108,0.12);color:var(--green);border:1px solid rgba(39,169,108,0.3);}
+.dc-body{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);}
+.dc-field{padding:13px 18px;border-right:1px solid var(--border);}
+.dc-field:last-child{border-right:none;}
+.dc-field.full{grid-column:1/-1;border-right:none;}
+.fl{font-size:9px;font-weight:bold;letter-spacing:2px;color:var(--teal);text-transform:uppercase;margin-bottom:4px;}
+.fv{font-size:12.5px;color:var(--deep);line-height:1.6;}
+.fv.m{color:var(--muted);}
+.assess-row{display:grid;grid-template-columns:1fr 1fr 2fr;border-bottom:1px solid var(--border);}
+.assess-item{padding:11px 18px;border-right:1px solid var(--border);}
+.assess-item:last-child{border-right:none;}
+
+/* ── Grouped Tech Assessment panel ── */
+.assess-panel{background:rgba(15,42,58,0.02);border-bottom:1px solid var(--border);}
+.assess-panel-head{padding:10px 18px 0;font-size:10px;font-weight:bold;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);}
+.assess-sizing{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);margin-top:8px;}
+.assess-sizing .assess-item{padding:9px 18px;border-bottom:1px solid var(--border);}
+.assess-notes{padding:9px 18px;border-bottom:1px solid var(--border);}
+.assess-reviews{display:grid;grid-template-columns:1fr 1fr;}
+.assess-reviews .assess-item{padding:11px 18px 14px;border-right:1px solid var(--border);border-bottom:none;}
+.assess-reviews .assess-item:last-child{border-right:none;}
+.effort-val{font-size:13px;font-weight:bold;color:var(--deep);}
+.dec-zone{padding:12px 18px;background:var(--light);border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.dz-lbl{font-size:9px;font-weight:bold;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;white-space:nowrap;}
+.db{padding:6px 16px;border-radius:7px;font-size:12px;font-weight:bold;border:2px solid;cursor:pointer;background:white;transition:all 0.15s;}
+.db-a{border-color:var(--green);color:var(--green);} .db-a.on{background:var(--green);color:white;}
+.db-d{border-color:var(--amber);color:var(--amber);} .db-d.on{background:var(--amber);color:white;}
+.db-r{border-color:var(--red);color:var(--red);} .db-r.on{background:var(--red);color:white;}
+.db-c{border-color:var(--muted);color:var(--muted);} .db-c.on{background:var(--muted);color:white;}
+.pri-zone{display:flex;gap:5px;align-items:center;margin-left:8px;padding-left:12px;border-left:1px solid var(--border);}
+.pz-lbl{font-size:9px;font-weight:bold;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;white-space:nowrap;}
+.pb{padding:4px 10px;border-radius:4px;font-size:11px;font-weight:bold;border:1.5px solid;cursor:pointer;background:white;transition:all 0.15s;}
+.pb0{border-color:rgba(201,64,64,0.4);color:var(--red);} .pb0.on{background:var(--red);color:white;border-color:var(--red);}
+.pb1{border-color:rgba(232,152,28,0.4);color:var(--amber);} .pb1.on{background:var(--amber);color:white;border-color:var(--amber);}
+.pb2{border-color:rgba(0,166,180,0.4);color:var(--teal);} .pb2.on{background:var(--teal);color:white;border-color:var(--teal);}
+.pb3{border-color:var(--border);color:var(--muted);} .pb3.on{background:var(--muted);color:white;}
+.rat-row{padding:0 18px 12px;background:var(--light);display:flex;gap:10px;align-items:center;}
+.rat-input{flex:1;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--deep);background:white;font-family:Arial,sans-serif;}
+.rat-input:focus{outline:none;border-color:var(--teal);}
+
+/* ── SAVE BUTTON (used in Decisions tab) ── */
+.save-btn{background:var(--dark);color:white;border:none;border-radius:6px;padding:7px 18px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+.save-btn:hover{background:var(--teal);}
+.save-btn:disabled{background:var(--muted);cursor:not-allowed;}
+.save-btn.saving{background:var(--teal);}
+.save-btn.saved{background:var(--green);}
+
+/* ── ASSESSMENT PANELS ── */
+.assess-panel-group{background:rgba(15,42,58,0.02);border-bottom:1px solid var(--border);}
+.assess-block{border-bottom:1px solid var(--border);}
+.assess-block:last-child{border-bottom:none;}
+.assess-block-head{padding:10px 18px 0;font-size:10px;font-weight:bold;letter-spacing:0.06em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.assess-block-head .owner-tag{font-size:10px;font-weight:normal;color:var(--muted);background:var(--light);border:1px solid var(--border);padding:1px 7px;border-radius:10px;text-transform:none;letter-spacing:0;}
+.assess-block-head.tech-head{color:var(--teal);}
+.assess-block-head.arch-head{color:#7c3aed;}
+.assess-block-head.cyber-head{color:#b45309;}
+.assess-sizing{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);margin-top:8px;}
+.assess-sizing .assess-item{padding:9px 18px;border-bottom:1px solid var(--border);}
+.assess-notes{padding:9px 18px;border-bottom:1px solid var(--border);}
+.assess-single{padding:11px 18px 14px;}
+.effort-val{font-size:13px;font-weight:bold;color:var(--deep);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:bold;box-shadow:0 4px 16px rgba(0,0,0,0.2);z-index:1000;opacity:0;transform:translateY(10px);transition:all 0.25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.ok{background:var(--green);}
+.toast.err{background:var(--red);}
+
+.footer{text-align:center;padding:16px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);margin-top:8px;}
+
+/* ── INTAKE CARDS ── */
+.intake-cards{display:flex;flex-direction:column;gap:14px;}
+.intake-card{background:white;border:1px solid #a8c8d0;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(27,79,93,.10);transition:box-shadow .15s,transform .15s;}
+.intake-card:hover{box-shadow:0 5px 18px rgba(27,79,93,.18);transform:translateY(-1px);}
+.intake-card-header{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:2px solid #a8c8d0;background:var(--dark);flex-wrap:wrap;}
+.intake-card-title{font-size:14px;font-weight:bold;color:#ffffff;flex:1;min-width:180px;}
+.intake-card-id{font-size:10px;color:rgba(255,255,255,.55);white-space:nowrap;}
+.intake-card-body{display:grid;grid-template-columns:1fr 1fr 1fr;background:white;}
+.intake-field{padding:12px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.intake-field:nth-child(3n){border-right:none;}
+.intake-field-wide{padding:12px 18px;border-bottom:1px solid var(--border);grid-column:1/-1;}
+.intake-field-wide:last-child{border-bottom:none;}
+.intake-fl{font-size:9px;font-weight:bold;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.intake-fv{font-size:12.5px;color:var(--deep);line-height:1.5;}
+.intake-card-footer{display:flex;align-items:center;gap:10px;padding:10px 18px;background:#f0f6f8;border-top:1px solid #a8c8d0;flex-wrap:wrap;}
+.intake-assess{display:flex;align-items:center;gap:6px;}
+.intake-assess-label{font-size:9px;font-weight:bold;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.deadline-tag{background:rgba(201,64,64,.12);color:var(--red);border:1px solid rgba(201,64,64,.35);font-size:10px;font-weight:bold;padding:3px 9px;border-radius:5px;white-space:nowrap;}
+/* Status badge — colour coded by workflow stage */
+.status-submitted{background:rgba(0,166,180,.15);color:#006d78;border:1px solid rgba(0,166,180,.4);font-size:10px;font-weight:bold;padding:3px 10px;border-radius:5px;white-space:nowrap;}
+.status-inreview{background:rgba(232,152,28,.15);color:#8a5a00;border:1px solid rgba(232,152,28,.4);font-size:10px;font-weight:bold;padding:3px 10px;border-radius:5px;white-space:nowrap;}
+.status-techassessment{background:rgba(64,187,166,.15);color:#1a6e5e;border:1px solid rgba(64,187,166,.4);font-size:10px;font-weight:bold;padding:3px 10px;border-radius:5px;white-space:nowrap;}
+.status-pendingdecision{background:rgba(201,64,64,.12);color:#8a1c1c;border:1px solid rgba(201,64,64,.35);font-size:10px;font-weight:bold;padding:3px 10px;border-radius:5px;white-space:nowrap;}
+.status-default{background:rgba(90,122,138,.12);color:var(--muted);border:1px solid var(--border);font-size:10px;font-weight:bold;padding:3px 10px;border-radius:5px;white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">
+    <div class="org">Speedcast · IT Program Management</div>
+    <div class="title">Portfolio Review Dashboard</div>
+  </div>
+  <div class="header-right">
+    <span class="updated" id="updatedAt">Not loaded</span>
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-tab active" onclick="showTab('portfolio',this)">Portfolio Overview <span class="nav-badge" id="badge-portfolio">—</span></div>
+  <div class="nav-tab" onclick="showTab('atrisk',this)">At Risk <span class="nav-badge alert" id="badge-atrisk">—</span></div>
+  <div class="nav-tab" onclick="showTab('decisions',this)">Leadership Decisions <span class="nav-badge" id="badge-decisions">—</span></div>
+  <div class="nav-tab" onclick="showTab('intake',this)">Intake Queue <span class="nav-badge" id="badge-intake">—</span></div>
+</div>
+
+<!-- ═══ PAGE 1: PORTFOLIO ═══ -->
+<div id="tab-portfolio" class="page active">
+  <div class="section">
+    <div class="sec-label">Portfolio health</div>
+    <div class="metrics">
+      <div class="metric"><div class="ml">Active projects</div><div class="mv teal" id="m-active">—</div></div>
+      <div class="metric"><div class="ml">On track</div><div class="mv green" id="m-green">—</div></div>
+      <div class="metric"><div class="ml">At risk</div><div class="mv amber" id="m-amber">—</div></div>
+      <div class="metric"><div class="ml">Off track</div><div class="mv red" id="m-red">—</div></div>
+      <div class="metric"><div class="ml">Pending decision</div><div class="mv mint" id="m-pending">—</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="sec-label">Active by priority</div>
+    <div class="pri-strip">
+      <div class="pri-card"><span class="pri-badge p0b">P0 — Critical</span><div><div class="pi-count" id="p0-count">—</div><div class="pi-label">Supersedes all</div></div></div>
+      <div class="pri-card"><span class="pri-badge p1b">P1 — Strategic</span><div><div class="pi-count" id="p1-count">—</div><div class="pi-label">Must be delivered</div></div></div>
+      <div class="pri-card"><span class="pri-badge p2b">P2 — Operational</span><div><div class="pi-count" id="p2-count">—</div><div class="pi-label">Start when P1 allows</div></div></div>
+      <div class="pri-card"><span class="pri-badge p3b">P3 — Improvement</span><div><div class="pi-count" id="p3-count">—</div><div class="pi-label">When capacity allows</div></div></div>
+    </div>
+  </div>
+  <div class="section" id="portfolio-table">
+    <div class="state-box"><div class="spinner"></div><br><br><div class="state-title">Loading portfolio...</div></div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 2: AT RISK ═══ -->
+<div id="tab-atrisk" class="page">
+  <div id="atrisk-content">
+    <div class="state-box"><div class="spinner"></div><br><br><div class="state-title">Loading at risk items...</div></div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 3: DECISIONS ═══ -->
+<div id="tab-decisions" class="page">
+  <div id="decisions-content">
+    <div class="state-box"><div class="spinner"></div><br><br><div class="state-title">Loading decision queue...</div></div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 4: INTAKE QUEUE ═══ -->
+<div id="tab-intake" class="page">
+  <div id="intake-table">
+    <div class="state-box"><div class="spinner"></div><br><br><div class="state-title">Loading intake queue...</div></div>
+  </div>
+</div>
+
+
+
+<div class="toast" id="toast"></div>
+<div class="footer">Speedcast IT Program Management Office · Confidential · Data live from Smartsheet</div>
+
+<script>
+// ── FLOW URLS ──
+// ── CONFIGURATION — update these lines if Power Automate trigger URLs are regenerated ──
+const _FLOW_GET_INTAKE    = 'https://defaultf29e86ba7b3f43b79f3a8cef7660e1.84.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/11134161bb4342c187ba976768dfa900/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=eHbGGDg9NIGL5m8pn8QCVXOkXfGWuGUsrxsfQo3JlJU';
+const _FLOW_GET_PORTFOLIO  = 'https://defaultf29e86ba7b3f43b79f3a8cef7660e1.84.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0b9e304f79cf4ab097a18573af6aaa61/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=6kdG6qypi3dpH18ep-ZfjsIPsZhqMi4iTs5OaLOZpC0';
+const _FLOW_PUT_DECISION   = 'https://defaultf29e86ba7b3f43b79f3a8cef7660e1.84.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5010d91ad6604ca6bbe6f641de481363/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=mWent5wDBIA_Dq2qaY4vj6NuqPvjCggbAUr24iBT-MU';
+
+// Protected by SharePoint authentication — only authenticated Speedcast users can access this page
+const FLOWS = {
+  getIntake:    _FLOW_GET_INTAKE,
+  getPortfolio: _FLOW_GET_PORTFOLIO,
+  putDecision:  _FLOW_PUT_DECISION
+};
+
+// ── COLUMN IDs — Intake Sheet ──
+const IC = {
+  requestId:        '3647137481265028',
+  requestName:      '4211018233581444',
+  submitterName:    '8714617860951940',
+  department:       '5055443163713412',
+  functionalArea:   '4034729691352964',
+  problemStatement: '2803643350028164',
+  successCondition: '7307242977398660',
+  hardDeadline:     '1677743443185540',
+  deadlineDate:     '6181343070556036',
+  deadlineDriver:   '3929543256870788',
+  businessSponsor:  '8433142884241284',
+  tier:             '7870192930819972',
+  intakeStatus:     '2240693396606852',
+  effortEstimate:   '1114793489764228',
+  existingCapacity: '5618393117134724',
+  techLeadNotes:    '3366593303449476',
+  priority:         '6744293023977348',
+  decision:         '4492493210292100',
+  decisionRationale:'8996092837662596',
+  decisionDate:     '15281861988228',
+  submissionDate:   '6041428974407556',
+  // NEW — add these columns to the Intake Sheet in Smartsheet, then paste their real column IDs below.
+  // Suggested type for the two Status columns: Dropdown — options: Not Required / Pending / Complete
+  archReviewStatus: '769623217966980',
+  archReviewNotes:  '3021423031652228',
+  cyberReviewStatus:'5273222845337476',
+  cyberReviewNotes: '7525022659022724'
+};
+
+// ── COLUMN IDs — Portfolio Sheet (stored as strings to prevent JS precision loss) ──
+const PC = {
+  projectId:     '8884997819944836',
+  projectName:   '88904797736836',
+  projectCategory:'4592504425107332',
+  tier:          '3182096641462148',
+  priority:      '1452084117671812',
+  functionalArea:'672029136424836',
+  projectManager:'2340704611422084',
+  phase:         '4758526496116612',
+  rag:           '2506726682431364',
+  status:        '1747682841628548',
+  targetStartDate:'6844304238792580',
+  targetEndDate: '1214804704579460',
+  projectOwner:  '1648664604528516',
+  projectSponsor:'5718404331949956',
+  riskNotes:     '5728672946622340',
+  riskSeverity:  '3265560741973892',
+  riskMitigation:'3493565523332996'
+};
+
+let intakeData = [];
+let portfolioData = [];
+let cardState = {};
+let sessionDecided = 0;
+
+// ── HELPERS ──
+function gc(row, colId) {
+  if (!row || !row.cells) return '';
+  const idStr = String(colId);
+  const c = row.cells.find(x => String(x.columnId) === idStr);
+  if (!c) return '';
+  return c.displayValue !== undefined && c.displayValue !== null ? String(c.displayValue)
+       : c.value !== undefined && c.value !== null ? String(c.value) : '';
+}
+
+function priClass(p) {
+  if (!p) return 'p3';
+  if (p.includes('P0')) return 'p0';
+  if (p.includes('P1')) return 'p1';
+  if (p.includes('P2')) return 'p2';
+  return 'p3';
+}
+
+function tierClass(t) {
+  if (!t) return 't2p';
+  if (t.includes('T1')) return 't1p';
+  if (t.includes('T3')) return 't3p';
+  return 't2p';
+}
+
+function tierShort(t) {
+  if (!t) return '—';
+  if (t.includes('T1')) return 'T1';
+  if (t.includes('T2')) return 'T2';
+  if (t.includes('T3')) return 'T3';
+  return t;
+}
+
+function ragClass(r) {
+  if (!r) return '';
+  const v = r.toLowerCase();
+  if (v.includes('red') || v === '3') return 'rag-r';
+  if (v.includes('yellow') || v.includes('amber') || v === '2') return 'rag-a';
+  if (v.includes('green') || v === '1') return 'rag-g';
+  return '';
+}
+
+function ragLabel(r) {
+  if (!r) return '—';
+  const v = r.toLowerCase();
+  if (v.includes('red') || v === '3') return 'Off track';
+  if (v.includes('yellow') || v.includes('amber') || v === '2') return 'At risk';
+  if (v.includes('green') || v === '1') return 'On track';
+  return r;
+}
+
+// ── REVIEW STATUS (Architecture Review / Cyber Review) ──
+function statusClass(s) {
+  if (!s) return 'status-default';
+  const v = s.toLowerCase().replace(/[^a-z]/g,'');
+  if (v === 'submitted') return 'status-submitted';
+  if (v === 'inreview') return 'status-inreview';
+  if (v.includes('tech') || v.includes('assess')) return 'status-techassessment';
+  if (v.includes('pending') || v.includes('decision')) return 'status-pendingdecision';
+  return 'status-default';
+}
+
+function reviewRequired(tier) {
+  // Small enhancement (T1) does not require Architecture or Cyber review. T2/T3 do.
+  return !!tier && !tier.includes('T1');
+}
+function reviewClass(status) {
+  if (!status || status === 'Not Required') return 'rv-na';
+  if (status === 'Complete') return 'rv-ok';
+  return 'rv-pending';
+}
+function reviewLabel(status, required) {
+  if (!required) return 'Not required';
+  if (!status || status === 'Pending' || status === '') return 'Pending';
+  return status;
+}
+function reviewIcon(status, required) {
+  if (!required) return '—';
+  if (status === 'Complete') return '✓';
+  return '⏳';
+}
+
+async function callFlow(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : JSON.stringify({})
+  });
+  if (!res.ok && res.status !== 202) throw new Error(`Flow error ${res.status}`);
+  const text = await res.text();
+  if (!text || text.trim() === '') return {};
+  try {
+    const parsed = JSON.parse(text);
+    // Handle both direct sheet response and wrapped response
+    if (parsed.rows) return parsed;
+    if (parsed.body && parsed.body.rows) return parsed.body;
+    if (typeof parsed === 'string') {
+      try { return JSON.parse(parsed); } catch { return {}; }
+    }
+    return parsed;
+  } catch { return {}; }
+}
+
+// ── LOAD ALL DATA ──
+async function loadAll() {
+  document.getElementById('updatedAt').textContent = 'Loading...';
+  try {
+    const [intake, portfolio] = await Promise.all([
+      callFlow(FLOWS.getIntake),
+      callFlow(FLOWS.getPortfolio)
+    ]);
+
+    // Handle various response formats
+    intakeData   = extractRows(intake);
+    portfolioData = extractRows(portfolio);
+
+    console.log('Intake rows loaded:', intakeData.length);
+    console.log('Portfolio rows loaded:', portfolioData.length);
+
+    renderAll();
+    document.getElementById('updatedAt').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+  } catch(err) {
+    console.error('loadAll error:', err);
+    showToast(`Load error: ${err.message}`, 'err');
+    document.getElementById('updatedAt').textContent = 'Load failed — click Refresh';
+  }
+}
+
+function extractRows(data) {
+  if (!data) return [];
+  // Direct rows array
+  if (Array.isArray(data.rows)) return data.rows;
+  // Wrapped in body
+  if (data.body && Array.isArray(data.body.rows)) return data.body.rows;
+  // String that needs parsing
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed.rows)) return parsed.rows;
+    } catch(e) {}
+  }
+  // Already an array
+  if (Array.isArray(data)) return data;
+  console.warn('Could not extract rows from:', JSON.stringify(data).substring(0,200));
+  return [];
+}
+
+function renderAll() {
+  renderPortfolio();
+  renderIntake();
+  renderAtRisk();
+  renderDecisions();
+}
+
+// ── PORTFOLIO ──
+function renderPortfolio() {
+  const active = portfolioData.filter(r => gc(r,PC.status) === 'In Progress');
+  const green  = active.filter(r => { const v=gc(r,PC.rag).toLowerCase(); return v.includes('green')||v==='1'; });
+  const amber  = active.filter(r => { const v=gc(r,PC.rag).toLowerCase(); return v.includes('yellow')||v.includes('amber')||v==='2'; });
+  const red    = active.filter(r => { const v=gc(r,PC.rag).toLowerCase(); return v.includes('red')||v==='3'; });
+  const pending = intakeData.filter(r => gc(r,IC.intakeStatus) === 'Pending Decision');
+
+  document.getElementById('m-active').textContent  = active.length;
+  document.getElementById('m-green').textContent   = green.length;
+  document.getElementById('m-amber').textContent   = amber.length;
+  document.getElementById('m-red').textContent     = red.length;
+  document.getElementById('m-pending').textContent = pending.length;
+
+  const p0 = active.filter(r => gc(r,PC.priority).includes('P0')).length;
+  const p1 = active.filter(r => gc(r,PC.priority).includes('P1')).length;
+  const p2 = active.filter(r => gc(r,PC.priority).includes('P2')).length;
+  const p3 = active.filter(r => gc(r,PC.priority).includes('P3')).length;
+  document.getElementById('p0-count').textContent = p0;
+  document.getElementById('p1-count').textContent = p1;
+  document.getElementById('p2-count').textContent = p2;
+  document.getElementById('p3-count').textContent = p3;
+
+  document.getElementById('badge-portfolio').textContent = active.length;
+
+  // Sort: red first, then amber, then green, then by date
+  const sorted = [...active].sort((a,b) => {
+    const order = r => { const v=gc(r,PC.rag).toLowerCase(); return v.includes('red')||v==='3'?0:v.includes('yellow')||v==='2'?1:2; };
+    return order(a) - order(b);
+  });
+
+  if (sorted.length === 0) {
+    document.getElementById('portfolio-table').innerHTML = `<div class="state-box"><div class="state-icon">📋</div><div class="state-title">No active projects</div><div class="state-sub">No projects currently in progress. Approved intake items will appear here once delivery starts.</div></div>`;
+    return;
+  }
+
+  const rows = sorted.map(r => {
+    const rag = gc(r, PC.rag);
+    const rc = ragClass(rag);
+    const rowClass = rc==='rag-r'?'row-red':rc==='rag-a'?'row-amber':'';
+    return `<tr class="${rowClass}">
+      <td class="proj-name">${gc(r,PC.projectName)||'—'}</td>
+      <td><span class="pri ${priClass(gc(r,PC.priority))}">${gc(r,PC.priority)||'—'}</span></td>
+      <td><span class="tier-pill ${tierClass(gc(r,PC.tier))}">${tierShort(gc(r,PC.tier))}</span></td>
+      <td>${gc(r,PC.functionalArea)||'—'}</td>
+      <td><span class="phase-tag">${gc(r,PC.phase)||'—'}</span></td>
+      <td><span class="rag ${rc}"><span class="rag-dot"></span>${ragLabel(rag)}</span></td>
+      <td class="dc">${gc(r,PC.targetEndDate)||'—'}</td>
+      <td class="dc">${gc(r,PC.projectOwner)||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('portfolio-table').innerHTML = `
+    <div class="tbl-wrap">
+      <div class="tbl-head"><span class="tbl-title">Active Portfolio</span><span class="tbl-count">${sorted.length} projects</span></div>
+      <table>
+        <thead><tr><th>Project</th><th>Priority</th><th>Tier</th><th>Area</th><th>Phase</th><th>Status</th><th>Target end</th><th>Owner</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ── INTAKE QUEUE ──
+function renderIntake() {
+  const open = intakeData.filter(r => {
+    const s = gc(r, IC.intakeStatus);
+    return ['Submitted','In Review','Tech Assessment','Pending Decision'].includes(s);
+  });
+  document.getElementById('badge-intake').textContent = open.length;
+
+  if (open.length === 0) {
+    document.getElementById('intake-table').innerHTML = `<div class="state-box"><div class="state-icon">✅</div><div class="state-title">Intake queue is empty</div><div class="state-sub">No open submissions. All requests have been decided or are in delivery.</div></div>`;
+    return;
+  }
+
+  const cards = open.map(r => {
+    const dl         = gc(r, IC.hardDeadline) === 'Yes';
+    const dlDate     = gc(r, IC.deadlineDate);
+    const dlDriver   = gc(r, IC.deadlineDriver);
+    const tier       = gc(r, IC.tier);
+    const req        = reviewRequired(tier);
+    const archStatus = gc(r, IC.archReviewStatus);
+    const cyberStatus= gc(r, IC.cyberReviewStatus);
+    const problem    = gc(r, IC.problemStatement) || '';
+    const success    = gc(r, IC.successCondition) || '';
+    const effort     = gc(r, IC.effortEstimate)   || '—';
+    const cap        = gc(r, IC.existingCapacity)  || '—';
+    const priority   = gc(r, IC.priority)          || '—';
+    const status     = gc(r, IC.intakeStatus)      || '—';
+    const submitter  = gc(r, IC.submitterName)     || '—';
+    const area       = gc(r, IC.functionalArea)    || '—';
+    const name       = gc(r, IC.requestName)       || 'Unnamed Request';
+    const reqId      = gc(r, IC.requestId)         || '';
+
+    return `
+    <div class="intake-card">
+      <div class="intake-card-header">
+        <div class="intake-card-title">${name}</div>
+        ${reqId ? `<div class="intake-card-id">${reqId}</div>` : ''}
+        <span class="tier-pill ${tierClass(tier)}">${tierShort(tier)||'—'}</span>
+        <span class="pri ${priClass(priority)}">${priority}</span>
+        ${dl ? `<span class="deadline-tag">⚡ Deadline${dlDate?' · '+dlDate:''}</span>` : ''}
+        <span class="${statusClass(status)}">${status}</span>
+      </div>
+      <div class="intake-card-body">
+        <div class="intake-field">
+          <div class="intake-fl">Functional Area</div>
+          <div class="intake-fv">${area}</div>
+        </div>
+        <div class="intake-field">
+          <div class="intake-fl">Submitted By</div>
+          <div class="intake-fv">${submitter}</div>
+        </div>
+        <div class="intake-field">
+          <div class="intake-fl">Effort Estimate</div>
+          <div class="intake-fv">${effort}</div>
+        </div>
+        ${problem ? `
+        <div class="intake-field-wide">
+          <div class="intake-fl">Problem Being Solved</div>
+          <div class="intake-fv">${problem}</div>
+        </div>` : ''}
+        ${success ? `
+        <div class="intake-field-wide">
+          <div class="intake-fl">Success Condition</div>
+          <div class="intake-fv">${success}</div>
+        </div>` : ''}
+        ${dl && dlDriver ? `
+        <div class="intake-field-wide">
+          <div class="intake-fl">Deadline Driver</div>
+          <div class="intake-fv">${dlDriver}</div>
+        </div>` : ''}
+      </div>
+      <div class="intake-card-footer">
+        <div class="intake-assess">
+          <span class="intake-assess-label">Existing Capacity</span>
+          <span class="cap-${cap.replace(/ /g,'')}">${cap}</span>
+        </div>
+        <div style="width:1px;height:16px;background:var(--border);margin:0 4px;"></div>
+        <div class="intake-assess">
+          <span class="intake-assess-label">Architecture Assessment</span>
+          <span class="rv ${reviewClass(req?archStatus:'Not Required')}">${reviewIcon(archStatus,req)} ${reviewLabel(archStatus,req)}</span>
+        </div>
+        <div style="width:1px;height:16px;background:var(--border);margin:0 4px;"></div>
+        <div class="intake-assess">
+          <span class="intake-assess-label">Cyber Assessment</span>
+          <span class="rv ${reviewClass(req?cyberStatus:'Not Required')}">${reviewIcon(cyberStatus,req)} ${reviewLabel(cyberStatus,req)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('intake-table').innerHTML = `
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span class="sec-label">Intake Queue</span>
+        <span class="tbl-count">${open.length} item${open.length!==1?'s':''}</span>
+      </div>
+      <div class="intake-cards">${cards}</div>
+    </div>`;
+}
+
+// ── AT RISK ──
+function renderAtRisk() {
+  const active = portfolioData.filter(r => gc(r,PC.status) === 'In Progress');
+  const atRisk = active.filter(r => {
+    const v = gc(r,PC.rag).toLowerCase();
+    return v.includes('red') || v.includes('yellow') || v.includes('amber') || v==='2' || v==='3';
+  }).sort((a,b) => {
+    const order = r => { const v=gc(r,PC.rag).toLowerCase(); return v.includes('red')||v==='3'?0:1; };
+    return order(a) - order(b);
+  });
+
+  const redCount = atRisk.filter(r => { const v=gc(r,PC.rag).toLowerCase(); return v.includes('red')||v==='3'; }).length;
+  document.getElementById('badge-atrisk').textContent = atRisk.length;
+
+  if (atRisk.length === 0) {
+    document.getElementById('atrisk-content').innerHTML = `<div class="state-box"><div class="state-icon">✅</div><div class="state-title">No at-risk projects</div><div class="state-sub">All active projects are on track. Good position heading into the Portfolio Review.</div></div>`;
+    return;
+  }
+
+  const cards = atRisk.map(r => {
+    const rag = gc(r, PC.rag);
+    const rc = ragClass(rag);
+    const isRed = rc === 'rag-r';
+    const riskNotes = gc(r, PC.riskNotes);
+    const riskSev = gc(r, PC.riskSeverity);
+    const riskMit = gc(r, PC.riskMitigation);
+    const sevColor = riskSev === 'High' ? 'var(--red)' : riskSev === 'Medium' ? 'var(--amber)' : 'var(--green)';
+    return `<div class="risk-card ${isRed?'red':'amber'}">
+      <div class="risk-left">
+        <div class="risk-name">${gc(r,PC.projectName)||'—'}</div>
+        <div class="risk-meta">
+          <span class="tier-pill ${tierClass(gc(r,PC.tier))}">${tierShort(gc(r,PC.tier))}</span>
+          <span class="pri ${priClass(gc(r,PC.priority))}">${gc(r,PC.priority)||'—'}</span>
+          <span class="dc">${gc(r,PC.functionalArea)||'—'}</span>
+          ${riskSev ? `<span style="font-size:10px;font-weight:bold;padding:2px 8px;border-radius:4px;background:rgba(0,0,0,0.06);color:${sevColor};">⚠ ${riskSev} severity</span>` : ''}
+        </div>
+        ${riskNotes ? `<div style="margin-top:8px;"><div style="font-size:9px;font-weight:bold;letter-spacing:2px;color:var(--teal);text-transform:uppercase;margin-bottom:3px;">Risk</div><div style="font-size:12px;color:var(--deep);line-height:1.5;">${riskNotes}</div></div>` : ''}
+        ${riskMit ? `<div style="margin-top:8px;"><div style="font-size:9px;font-weight:bold;letter-spacing:2px;color:var(--mint);text-transform:uppercase;margin-bottom:3px;">Mitigation</div><div style="font-size:12px;color:var(--muted);line-height:1.5;">${riskMit}</div></div>` : ''}
+        ${!riskNotes && !riskMit ? `<div style="margin-top:8px;font-size:11px;color:var(--muted);font-style:italic;">No risk notes yet — IT PM to update at next weekly check-in</div>` : ''}
+      </div>
+      <div class="risk-right">
+        <span class="rag ${rc}"><span class="rag-dot"></span>${ragLabel(rag)}</span>
+        <span class="phase-tag">${gc(r,PC.phase)||'—'}</span>
+        <span class="risk-date">${gc(r,PC.targetEndDate)||'No date set'}</span>
+        <span class="risk-owner">${gc(r,PC.projectOwner)||'—'}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('atrisk-content').innerHTML = `
+    <div class="section">
+      <div class="sec-label">${atRisk.length} project${atRisk.length!==1?'s':''} need attention — ${redCount} off track</div>
+      <div class="risk-grid">${cards}</div>
+    </div>`;
+}
+
+// ── DECISIONS ──
+function renderDecisions() {
+  const pending = intakeData.filter(r => gc(r, IC.intakeStatus) === 'Pending Decision');
+  document.getElementById('badge-decisions').textContent = pending.length;
+
+  if (pending.length === 0) {
+    document.getElementById('decisions-content').innerHTML = `<div class="state-box"><div class="state-icon">✅</div><div class="state-title">No pending decisions</div><div class="state-sub">All intake submissions have been reviewed. Check back after the next cycle.</div></div>`;
+    return;
+  }
+
+  const cards = pending.map(row => {
+    const id = row.id;
+    const reqId    = gc(row, IC.requestId) || '—';
+    const name     = gc(row, IC.requestName) || 'Unnamed';
+    const submitter= gc(row, IC.submitterName) || '—';
+    const sponsor  = gc(row, IC.businessSponsor) || '—';
+    const fa       = gc(row, IC.functionalArea) || '—';
+    const tier     = gc(row, IC.tier) || '';
+    const problem  = gc(row, IC.problemStatement) || '—';
+    const success  = gc(row, IC.successCondition) || '—';
+    const dl       = gc(row, IC.hardDeadline) === 'Yes';
+    const dlDate   = gc(row, IC.deadlineDate);
+    const dlDriver = gc(row, IC.deadlineDriver);
+    const effort   = gc(row, IC.effortEstimate) || '—';
+    const cap      = gc(row, IC.existingCapacity) || '—';
+    const notes    = gc(row, IC.techLeadNotes) || 'No notes provided.';
+    const exPri    = gc(row, IC.priority);
+    const exDec    = gc(row, IC.decision);
+    const exRat    = gc(row, IC.decisionRationale);
+    const subDate  = gc(row, IC.submissionDate);
+    const reqReview   = reviewRequired(tier);
+    const archStatus  = gc(row, IC.archReviewStatus);
+    const archNotes   = gc(row, IC.archReviewNotes);
+    const cyberStatus = gc(row, IC.cyberReviewStatus);
+    const cyberNotes  = gc(row, IC.cyberReviewNotes);
+    const reviewsBlocking = reqReview && (archStatus !== 'Complete' || cyberStatus !== 'Complete');
+
+    if (!cardState[id]) cardState[id] = { priority: exPri||'', decision: exDec||'', rationale: exRat||'' };
+    cardState[id]._reviewsBlocking = reviewsBlocking;
+    const s = cardState[id];
+    const isDecided = !!exDec;
+    const fmtDate = subDate ? new Date(subDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+
+    const decMap = [
+      {k:'Approved',c:'db-a',l:'✓ Approve'},
+      {k:'Deferred',c:'db-d',l:'Defer'},
+      {k:'Rejected',c:'db-r',l:'Reject'},
+      {k:'Returned for Clarification',c:'db-c',l:'Return for Clarification'}
+    ];
+    const priMap = [
+      {k:'P0 — Critical',c:'pb0',l:'P0'},
+      {k:'P1 — Strategic',c:'pb1',l:'P1'},
+      {k:'P2 — Operational',c:'pb2',l:'P2'},
+      {k:'P3 — Improvement',c:'pb3',l:'P3'}
+    ];
+
+    return `<div class="dec-card ${dl?'has-deadline':''} ${isDecided?'decided':''}" id="dc-${id}">
+      <div class="dc-header">
+        <div class="dc-header-left">
+          <div class="dc-req-id">${reqId} · ${fmtDate}</div>
+          <div class="dc-name">${name}</div>
+          <div class="dc-meta">
+            ${tier?`<span class="tier-pill ${tierClass(tier)}">${tier.includes('T1')?'T1 · Small':tier.includes('T2')?'T2 · Standard':'T3 · Program'}</span>`:''}
+            <span class="dc-badge p2b" style="background:var(--teal-light);color:var(--teal);border:1px solid rgba(0,166,180,0.3);">${fa}</span>
+            ${dl?`<span class="deadline-badge">⚡ Deadline${dlDate?' · '+dlDate:''}${dlDriver?' — '+dlDriver:''}</span>`:''}
+            <span class="dc" style="font-size:11px;"><strong>By:</strong> ${submitter} · <strong>Sponsor:</strong> ${sponsor}</span>
+          </div>
+        </div>
+        <span class="dc-badge ${isDecided?'status-decided':'status-pending'}" id="badge-dc-${id}">${isDecided?'✓ Decision recorded':'Awaiting decision'}</span>
+      </div>
+      <div class="dc-body">
+        <div class="dc-field"><div class="fl">Problem being solved</div><div class="fv">${problem}</div></div>
+        <div class="dc-field"><div class="fl">What success looks like</div><div class="fv m">${success}</div></div>
+      </div>
+      ${reviewsBlocking ? `<div class="review-warning">⚠ Not ready for decision — ${archStatus!=='Complete'?'Architecture Assessment':''}${archStatus!=='Complete'&&cyberStatus!=='Complete'?' and ':''}${cyberStatus!=='Complete'?'Cyber Assessment':''} still outstanding for this ${tierShort(tier)} request</div>` : ''}
+      <div class="assess-panel-group">
+
+        <!-- TECH ASSESSMENT (completed via Smartsheet workflow) -->
+        <div class="assess-block">
+          <div class="assess-block-head tech-head">Tech Assessment <span class="owner-tag">Completed via Smartsheet workflow · Owner: Tech Lead</span></div>
+          <div class="assess-sizing">
+            <div class="assess-item"><div class="fl">Effort estimate</div><div class="effort-val">${effort||'—'}</div></div>
+            <div class="assess-item"><div class="fl">Existing capacity?</div><div class="cap-${cap.replace(/ /g,'')}">${cap||'—'}</div></div>
+          </div>
+          <div class="assess-notes"><div class="fl">Tech lead notes</div><div class="fv m" style="font-size:11.5px;">${notes||'No notes yet.'}</div></div>
+        </div>
+
+        <!-- ARCHITECTURE ASSESSMENT -->
+        <div class="assess-block">
+          <div class="assess-block-head arch-head">Architecture Assessment <span class="owner-tag">Owner: Solution Architect</span></div>
+          <div class="assess-single">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:${archNotes?'8px':'0'};">
+              <div><div class="fl" style="margin-bottom:3px;">Status</div>
+                <span class="rv ${reviewClass(reqReview?archStatus:'Not Required')}">${reviewIcon(archStatus,reqReview)} ${reviewLabel(archStatus,reqReview)}</span>
+              </div>
+              ${!reqReview ? `<span style="font-size:11px;color:var(--muted);font-style:italic;">Not required for T1 (Small) requests</span>` : ''}
+            </div>
+            ${archNotes ? `<div><div class="fl" style="margin-bottom:3px;">Assessment notes</div><div class="fv m" style="font-size:11.5px;">${archNotes}</div></div>` : (reqReview ? `<div style="font-size:11px;color:var(--muted);font-style:italic;">No notes submitted yet.</div>` : '')}
+          </div>
+        </div>
+
+        <!-- CYBER ASSESSMENT -->
+        <div class="assess-block">
+          <div class="assess-block-head cyber-head">Cyber Assessment <span class="owner-tag">Owner: Cybersecurity Team — independent of Tech Lead</span></div>
+          <div class="assess-single">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:${cyberNotes?'8px':'0'};">
+              <div><div class="fl" style="margin-bottom:3px;">Status</div>
+                <span class="rv ${reviewClass(reqReview?cyberStatus:'Not Required')}">${reviewIcon(cyberStatus,reqReview)} ${reviewLabel(cyberStatus,reqReview)}</span>
+              </div>
+              ${!reqReview ? `<span style="font-size:11px;color:var(--muted);font-style:italic;">Not required for T1 (Small) requests</span>` : ''}
+            </div>
+            ${cyberNotes ? `<div><div class="fl" style="margin-bottom:3px;">Assessment notes</div><div class="fv m" style="font-size:11.5px;">${cyberNotes}</div></div>` : (reqReview ? `<div style="font-size:11px;color:var(--muted);font-style:italic;">No notes submitted yet.</div>` : '')}
+          </div>
+        </div>
+
+      </div>
+      <div class="dec-zone">
+        <span class="dz-lbl">Decision</span>
+        ${decMap.map(b=>`<button class="db ${b.c}${s.decision===b.k?' on':''}" onclick="setDec(${id},'${b.k}')">${b.l}</button>`).join('')}
+        <div class="pri-zone">
+          <span class="pz-lbl">Priority</span>
+          ${priMap.map(b=>`<button class="pb ${b.c}${s.priority===b.k?' on':''}" onclick="setPri(${id},'${b.k}')">${b.l}</button>`).join('')}
+        </div>
+      </div>
+      <div class="rat-row">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;font-weight:bold;">Notes:</span>
+        <input class="rat-input" id="rat-${id}" type="text" value="${(s.rationale||'').replace(/"/g,'&quot;')}" placeholder="Add rationale or conditions...">
+        <button class="save-btn" id="sbtn-${id}" onclick="saveDecision(${id})">Record Decision</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('decisions-content').innerHTML = cards;
+}
+
+function setDec(id, val) {
+  if (val === 'Approved' && cardState[id] && cardState[id]._reviewsBlocking) {
+    const proceed = confirm('Architecture Review and/or Cyber Review is not yet marked Complete for this request. Approve anyway?');
+    if (!proceed) return;
+  }
+  if (!cardState[id]) cardState[id]={};
+  cardState[id].decision = val;
+  const map = {Approved:'db-a',Deferred:'db-d',Rejected:'db-r','Returned for Clarification':'db-c'};
+  Object.entries(map).forEach(([k,c])=>{
+    const b = document.querySelector(`#dc-${id} .${c}`);
+    if(b) b.classList.toggle('on', val===k);
+  });
+}
+
+function setPri(id, val) {
+  if (!cardState[id]) cardState[id]={};
+  cardState[id].priority = val;
+  const map = {'P0 — Critical':'pb0','P1 — Strategic':'pb1','P2 — Operational':'pb2','P3 — Improvement':'pb3'};
+  Object.entries(map).forEach(([k,c])=>{
+    const b = document.querySelector(`#dc-${id} .${c}`);
+    if(b) b.classList.toggle('on', val===k);
+  });
+}
+
+async function saveDecision(rowId) {
+  const s = cardState[rowId] || {};
+  const ratInput = document.getElementById(`rat-${rowId}`);
+  const rationale = ratInput ? ratInput.value.trim() : '';
+  const btn = document.getElementById(`sbtn-${rowId}`);
+
+  if (!s.decision) { showToast('Select a decision first — Approve, Defer, Reject, or Return', 'err'); return; }
+  if (s.decision === 'Approved' && !s.priority) { showToast('Set a priority (P0–P3) before approving', 'err'); return; }
+
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  btn.className = 'save-btn saving';
+
+  try {
+    await callFlow(FLOWS.putDecision, {
+      rowId: String(rowId),
+      decision: s.decision,
+      priority: s.priority || '',
+      rationale: rationale,
+      decisionDate: new Date().toISOString().split('T')[0]
+    });
+
+    btn.textContent = '✓ Recorded';
+    btn.className = 'save-btn saved';
+    sessionDecided++;
+
+    const card = document.getElementById(`dc-${rowId}`);
+    if(card) card.classList.add('decided');
+    const badge = document.getElementById(`badge-dc-${rowId}`);
+    if(badge){ badge.textContent='✓ Decision recorded'; badge.className='dc-badge status-decided'; }
+
+    showToast(`✓ ${s.decision}${s.priority?' · '+s.priority:''}`, 'ok');
+
+    setTimeout(()=>{
+      btn.textContent='Update Decision';
+      btn.disabled=false;
+      btn.className='save-btn';
+    }, 3000);
+
+  } catch(err) {
+    showToast(`Save error: ${err.message}`, 'err');
+    btn.textContent='Record Decision';
+    btn.disabled=false;
+    btn.className='save-btn';
+  }
+}
+
+function showTab(id, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(()=>{ t.className='toast'; }, 3500);
+}
+
+// Load on start
+window.onload = loadAll;
+</script>
+</body>
+</html>
